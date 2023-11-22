@@ -1,3 +1,4 @@
+using System.Data;
 using GildedRoseKata;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Utilities;
 
@@ -5,13 +6,21 @@ namespace GildedRose_Tests
 {
     public class GildedRose_AcceptanceTests
     {
-        [Fact]
+        private Dictionary<string, Func<Item, UpdatableItem>> UpdatableItemsTable = new () {
+            { "Aged Brie", (item) => new AgedBrieItem(item) },
+            { "Backstage passes to a TAFKAL80ETC concert", (item) => new BackstagePassesItem(item) },
+            { "Sulfuras, Hand of Ragnaros", (item) => new UpdatableItem(item) },
+            { "Conjured", (item) => new ConjuredItem(item)},
+            { "Default", (item) => new NormalItem(item) }
+            };
+
+[Fact]
         // - At the end of each day, our system lowers the value of SellIn for every item
         public void UpdateQuality_Should_ReduceSellInTo4WhenInitialzedAs5()
         {
             // Given the item has sellIn of 5
             Item fooItem = CreateItem("Foo", 5, 5);
-            var SUT = CreateGildedRose(fooItem);
+            var SUT = CreateGildedRose(fooItem, UpdatableItemsTable);
 
             // When the Quality Update occurs
             SUT.UpdateQuality();
@@ -26,7 +35,7 @@ namespace GildedRose_Tests
         {
             // Given the item has a quality of 5
             var fooItem = CreateItem("Foo", 5, 5);
-            var SUT = CreateGildedRose(fooItem);
+            var SUT = CreateGildedRose(fooItem, UpdatableItemsTable);
 
             // When the Quality Update occurs
             SUT.UpdateQuality();
@@ -41,7 +50,7 @@ namespace GildedRose_Tests
         {
             // Given the sell-by date has passed
             var zeroSellInItem = CreateItem("Foo", 3, -1);
-            var SUT = CreateGildedRose(zeroSellInItem);
+            var SUT = CreateGildedRose(zeroSellInItem, UpdatableItemsTable);
 
             // When the Quality Update occurs
             SUT.UpdateQuality();
@@ -56,7 +65,7 @@ namespace GildedRose_Tests
         {
             // Given the quality of an item is 0
             var zeroQualityItem = CreateItem("Foo", 0, 5);
-            var SUT = CreateGildedRose(zeroQualityItem);
+            var SUT = CreateGildedRose(zeroQualityItem, UpdatableItemsTable);
 
             // When the Quality Update occurs
             SUT.UpdateQuality();
@@ -71,7 +80,7 @@ namespace GildedRose_Tests
         {
             // Given the item name is "Aged Brie" and it's quality is 1
             var agedBrieItem = CreateItem("Aged Brie", 1, 5);
-            var SUT = CreateGildedRose(agedBrieItem);
+            var SUT = CreateGildedRose(agedBrieItem, UpdatableItemsTable);
 
             // When the Quality Update occurs
             SUT.UpdateQuality();
@@ -86,7 +95,7 @@ namespace GildedRose_Tests
         {
             // Given the quality of an item is already 50
             var agedBrieItem = CreateItem("Aged Brie", 50, 5);
-            var SUT = CreateGildedRose(agedBrieItem);
+            var SUT = CreateGildedRose(agedBrieItem, UpdatableItemsTable);
 
             // When the Quality Update occurs
             SUT.UpdateQuality();
@@ -101,7 +110,7 @@ namespace GildedRose_Tests
         {
             // Given the item is named "Sulfuras" and has a quality of 10
             var sulfurasItem = CreateItem("Sulfuras, Hand of Ragnaros", 10, 5);
-            var SUT = CreateGildedRose(sulfurasItem);
+            var SUT = CreateGildedRose(sulfurasItem, UpdatableItemsTable);
 
             // When the quality update occurs
             SUT.UpdateQuality();
@@ -116,7 +125,7 @@ namespace GildedRose_Tests
         {
             // Given the item is named "Sulfuras" and has a quality of 10
             var sulfurasItem = CreateItem("Sulfuras, Hand of Ragnaros", 5, 10);
-            var SUT = CreateGildedRose(sulfurasItem);
+            var SUT = CreateGildedRose(sulfurasItem, UpdatableItemsTable);
 
             // When the quality update occurs
             SUT.UpdateQuality();
@@ -135,7 +144,7 @@ namespace GildedRose_Tests
         {
             // Given the item is Backstage Passes and the Sell In value is greater than 10
             var backstagePassesItem = CreateItem("Backstage passes to a TAFKAL80ETC concert", 10, sellIn);
-            var SUT = CreateGildedRose(backstagePassesItem);
+            var SUT = CreateGildedRose(backstagePassesItem, UpdatableItemsTable);
 
             // When the quality update occurs
             SUT.UpdateQuality();
@@ -155,7 +164,7 @@ namespace GildedRose_Tests
         {
             // Given the item is Backstage Passes and the Sell In value is greater than 10
             var backstagePassesItem = CreateItem("Backstage passes to a TAFKAL80ETC concert", 10, sellIn);
-            var SUT = CreateGildedRose(backstagePassesItem);
+            var SUT = CreateGildedRose(backstagePassesItem, UpdatableItemsTable);
 
             // When the quality update occurs
             SUT.UpdateQuality();
@@ -175,7 +184,7 @@ namespace GildedRose_Tests
         {
             // Given the item is Backstage Passes and the Sell In value is greater than 10
             var backstagePassesItem = CreateItem("Backstage passes to a TAFKAL80ETC concert", 10, sellIn);
-            var SUT = CreateGildedRose(backstagePassesItem);
+            var SUT = CreateGildedRose(backstagePassesItem, UpdatableItemsTable);
 
             // When the quality update occurs
             SUT.UpdateQuality();
@@ -194,7 +203,7 @@ namespace GildedRose_Tests
         {
             // Given the item is Backstage Passes and the Sell In value is greater than 10
             var backstagePassesItem = CreateItem("Backstage passes to a TAFKAL80ETC concert", 10, sellIn);
-            var SUT = CreateGildedRose(backstagePassesItem);
+            var SUT = CreateGildedRose(backstagePassesItem, UpdatableItemsTable);
 
             // When the quality update occurs
             SUT.UpdateQuality();
@@ -203,10 +212,42 @@ namespace GildedRose_Tests
             Assert.Equal(0, backstagePassesItem.Quality);
         }
 
+        [Fact]
+        //- "Conjured" items degrade in Quality twice as fast as normal items
+        public void UpdateQuality_Should_DecreaseQualityByTwo_When_ItemIsConjured()
+        {
+            // Given the item is "Conjured" and it's quality is 4
+            var conjuredItem = CreateItem("Conjured", 4, 5);
+            var SUT = CreateGildedRose(conjuredItem, UpdatableItemsTable);
+
+            // When the quality update occurs
+            SUT.UpdateQuality();
+
+            // Then the quality of the "Conjured" item is 2
+            Assert.Equal(2, conjuredItem.Quality);
+        }
+
+        [Fact]
+        // - "Conjured" items sellin value decreases by one
+        public void UpdateQuality_Should_DecreaseSellInByOne_When_ItemIsConjured()
+        {
+            // Given the item is "Conjured" and it's sellin is 4
+            var conjuredItem = CreateItem("Conjured", 8, 4);
+            var SUT = CreateGildedRose(conjuredItem, new Dictionary<string, Func<Item, UpdatableItem>>()  {
+                 { "Conjured", (item) => new ConjuredItem(item)},
+            }); 
+
+            // When the quality update occurs
+            SUT.UpdateQuality();
+
+            // Then the SellIn of the "Conjured" item is 3
+            Assert.Equal(3, conjuredItem.SellIn);
+        }
+
         private static Item CreateItem(string name, int quality, int sellIn) =>
             new Item { Name = name, Quality = quality, SellIn = sellIn };
 
-        private static GildedRose CreateGildedRose(Item newItem) =>
-            new GildedRose(new List<Item> { newItem });
+        private static GildedRose CreateGildedRose(Item newItem, Dictionary<string, Func<Item, UpdatableItem>> updateableItemsTable) =>
+            new GildedRose(new List<Item> { newItem }, updateableItemsTable);
     }
 }

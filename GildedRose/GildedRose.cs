@@ -1,89 +1,34 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace GildedRoseKata;
 
-public class GildedRose
+public partial class GildedRose
 {
     private readonly IList<Item> _items;
 
-    public GildedRose(IList<Item> items)
+    public GildedRose(IList<Item> items, Dictionary<string, Func<Item, UpdatableItem>> updateableItemsTable)
     {
+        if (updateableItemsTable is null) throw new ArgumentException();
+        else UpdateableItemsTable = updateableItemsTable;
         _items = items;
     }
 
+    public Dictionary<string, Func<Item, UpdatableItem>> UpdateableItemsTable;
+
     public void UpdateQuality()
     {
-        for (var i = 0; i < _items.Count; i++)
+        foreach (var item in _items)
         {
-            if (_items[i].Name != "Aged Brie" && _items[i].Name != "Backstage passes to a TAFKAL80ETC concert")
-            {
-                if (_items[i].Quality > 0)
-                {
-                    if (_items[i].Name != "Sulfuras, Hand of Ragnaros")
-                    {
-                        _items[i].Quality = _items[i].Quality - 1;
-                    }
-                }
-            }
-            else
-            {
-                if (_items[i].Quality < 50)
-                {
-                    _items[i].Quality = _items[i].Quality + 1;
-
-                    if (_items[i].Name == "Backstage passes to a TAFKAL80ETC concert")
-                    {
-                        if (_items[i].SellIn < 11)
-                        {
-                            if (_items[i].Quality < 50)
-                            {
-                                _items[i].Quality = _items[i].Quality + 1;
-                            }
-                        }
-
-                        if (_items[i].SellIn < 6)
-                        {
-                            if (_items[i].Quality < 50)
-                            {
-                                _items[i].Quality = _items[i].Quality + 1;
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (_items[i].Name != "Sulfuras, Hand of Ragnaros")
-            {
-                _items[i].SellIn = _items[i].SellIn - 1;
-            }
-
-            if (_items[i].SellIn < 0)
-            {
-                if (_items[i].Name != "Aged Brie")
-                {
-                    if (_items[i].Name != "Backstage passes to a TAFKAL80ETC concert")
-                    {
-                        if (_items[i].Quality > 0)
-                        {
-                            if (_items[i].Name != "Sulfuras, Hand of Ragnaros")
-                            {
-                                _items[i].Quality = _items[i].Quality - 1;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        _items[i].Quality = _items[i].Quality - _items[i].Quality;
-                    }
-                }
-                else
-                {
-                    if (_items[i].Quality < 50)
-                    {
-                        _items[i].Quality = _items[i].Quality + 1;
-                    }
-                }
-            }
+            var typeItem = UpdatableItemFactory(item);
+            typeItem.Update();
         }
+    }
+
+    public UpdatableItem UpdatableItemFactory(Item item) {
+        return UpdateableItemsTable
+            .FirstOrDefault(updatableItem => updatableItem.Key.Equals(item.Name) || updatableItem.Key.Equals("Default"))
+            .Value(item);
     }
 }
