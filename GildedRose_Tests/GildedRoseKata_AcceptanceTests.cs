@@ -1,3 +1,4 @@
+using System.Data;
 using GildedRoseKata;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Utilities;
 
@@ -201,6 +202,46 @@ namespace GildedRose_Tests
 
             // Then the quality of the Backstage Passes increases by 1
             Assert.Equal(0, backstagePassesItem.Quality);
+        }
+
+        [Fact]
+        // - "Conjured" items degrade in Quality twice as fast as normal items
+        public void UpdateQuality_Should_DecreaseQualityBy2_When_ItemIsConjured()
+        {
+            // Given the item is "Conjured" and it's quality is 4
+            var conjuredItem = CreateItem("Conjured", 4, 5);
+            var SUT = CreateGildedRose(conjuredItem);
+            var newUpdateItemsDictionary = new Dictionary<string, Func<Item, UpdatableItem>>
+            {
+                {"Conjured", (item) => new ConjuredItem(item)}
+            };
+            SUT.UpdateableItemsTable = newUpdateItemsDictionary;
+
+            // When the quality update occurs
+            SUT.UpdateQuality();
+
+            // Then the quality of the "Conjured" item is 2
+            Assert.Equal(2, conjuredItem.Quality);
+        }
+
+        [Fact]
+        // - "Conjured" items decrease sellin by one
+        public void UpdateQuality_Should_DecreaseSellInBy1_When_ItemIsConjured()
+        {
+            // Given the item is "Conjured" and it's sellin is 4
+            var conjuredItem = CreateItem("Conjured", 5, 4);
+            var SUT = CreateGildedRose(conjuredItem);
+            var newUpdateItemsDictionary = new Dictionary<string, Func<Item, UpdatableItem>>
+            {
+                {"Conjured", (item) => new ConjuredItem(item)}
+            };
+            SUT.UpdateableItemsTable = newUpdateItemsDictionary;
+
+            // When the quality update occurs
+            SUT.UpdateQuality();
+
+            // Then the SellIn of the "Conjured" item is 3
+            Assert.Equal(3, conjuredItem.SellIn);
         }
 
         private static Item CreateItem(string name, int quality, int sellIn) =>
